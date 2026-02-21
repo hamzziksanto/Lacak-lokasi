@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Tracking System</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:monospace;
+}
+
+body{
+  background:#000;
+  color:#ff0000;
+}
+
+/* CENTER LOGIN */
+#login{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  flex-direction:column;
+  text-align:center;
+}
+
+/* Hacker Image */
+.hacker-img{
+  width:150px;
+  margin-bottom:20px;
+  border:2px solid #ff0000;
+  box-shadow:0 0 20px red;
+}
+
+/* Form Box */
+.login-box{
+  background:#111;
+  padding:30px;
+  border:2px solid #ff0000;
+  box-shadow:0 0 25px red;
+}
+
+input{
+  width:220px;
+  padding:12px;
+  margin:10px 0;
+  border:2px solid #ff0000;
+  background:#000;
+  color:#ff0000;
+  text-align:center;
+}
+
+button{
+  width:220px;
+  padding:12px;
+  border:none;
+  background:#ff0000;
+  color:#000;
+  font-weight:bold;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+button:hover{
+  background:#cc0000;
+}
+
+#loginError{
+  margin-top:10px;
+  color:#ff0000;
+}
+
+/* TRACKER */
+#tracker{
+  display:none;
+  text-align:center;
+  padding-top:40px;
+}
+
+#map{
+  height:400px;
+  width:90%;
+  margin:20px auto;
+  border:2px solid #ff0000;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+ 
+  
+  <div class="login-box">
+    <h2>SECURE ACCESS</h2>
+    <input type="text" id="username" placeholder="Username"><br>
+    <input type="password" id="password" placeholder="Password"><br>
+    <button onclick="login()">KONFIRMASI</button>
+    <p id="loginError"></p>
+  </div>
+</div>
+
+<!-- TRACKER -->
+<div id="tracker">
+  <h2>TRACKING SYSTEM INDONESIA</h2>
+  <input type="text" id="nomor" placeholder="Masukkan Nomor HP"><br>
+  <button onclick="acakLokasi()">LACAK SEKARANG</button>
+  <div id="hasil"></div>
+  <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+function login(){
+  const user = document.getElementById("username").value;
+  const pass = document.getElementById("password").value;
+
+  if(user === "HamzzXploit1" && pass === "hamzzgacor1"){
+    document.getElementById("login").style.display = "none";
+    document.getElementById("tracker").style.display = "block";
+  }else{
+    document.getElementById("loginError").innerText = "AKSES DITOLAK!";
+  }
+}
+
+const kotaIndonesia = [
+  {nama:"Jakarta", lat:-6.2088, long:106.8456},
+  {nama:"Bandung", lat:-6.9175, long:107.6191},
+  {nama:"Surabaya", lat:-7.2575, long:112.7521},
+  {nama:"Medan", lat:3.5952, long:98.6722},
+  {nama:"Makassar", lat:-5.1477, long:119.4327},
+  {nama:"Yogyakarta", lat:-7.7956, long:110.3695},
+  {nama:"Semarang", lat:-6.9667, long:110.4167},
+  {nama:"Denpasar", lat:-8.6500, long:115.2167},
+  {nama:"Palembang", lat:-2.9761, long:104.7754},
+  {nama:"Balikpapan", lat:-1.2654, long:116.8312},
+  {nama:"Pontianak", lat:-0.0263, long:109.3425},
+  {nama:"Manado", lat:1.4748, long:124.8421},
+  {nama:"Padang", lat:-0.9471, long:100.4172},
+  {nama:"Banjarmasin", lat:-3.3186, long:114.5944},
+  {nama:"Jayapura", lat:-2.5337, long:140.7181}
+];
+
+let map;
+let marker;
+
+function initMap(){
+  map = L.map('map').setView([-2.5,118],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+}
+
+function acakLokasi(){
+  let nomor = document.getElementById("nomor").value;
+  if(nomor === "") return alert("Masukkan nomor dulu");
+
+  let randomKota = kotaIndonesia[Math.floor(Math.random()*kotaIndonesia.length)];
+
+  if(!map) initMap();
+  if(marker) map.removeLayer(marker);
+
+  marker = L.marker([randomKota.lat, randomKota.long]).addTo(map)
+    .bindPopup("Lokasi: "+randomKota.nama+", Indonesia")
+    .openPopup();
+
+  map.setView([randomKota.lat, randomKota.long],12);
+
+  document.getElementById("hasil").innerHTML =
+    "Nomor: "+nomor+"<br>" +
+    "Status: TERDETEKSI<br>" +
+    "Lokasi: "+randomKota.nama+", Indonesia<br>" +
+    "Koordinat: "+randomKota.lat+", "+randomKota.long;
+}
+</script>
+
+</body>
+</html>
