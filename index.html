@@ -3,183 +3,1142 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Secure Tracking System</title>
+<title>root@tracker:~# SYSTEM</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<!-- ═══════════════════════════════════════════ -->
+<!-- ⚙️ GANTI 2 BARIS DI BAWAH INI! -->
+<!-- ═══════════════════════════════════════════ -->
+<script>
+  const API_URL = 'https://your-backend.railway.app';
+  const TELEGRAM_BOT = 'LACAKDULU_BOT';
+</script>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:monospace;
-}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-body{
-  background:#000;
-  color:#ff0000;
-}
+  body {
+    font-family: 'Courier New', Courier, monospace;
+    background: #000;
+    color: #00ff41;
+    min-height: 100vh;
+    padding: 15px;
+    overflow-x: hidden;
+    position: relative;
+  }
 
-/* CENTER LOGIN */
-#login{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  flex-direction:column;
-  text-align:center;
-}
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg,
+      rgba(0,255,65,0.03) 0px, rgba(0,255,65,0.03) 1px,
+      transparent 1px, transparent 3px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,255,65,0.02);
+    animation: flicker 0.15s infinite;
+    pointer-events: none;
+    z-index: 9998;
+  }
+  @keyframes flicker {
+    0%,100% { opacity: 0.1; } 50% { opacity: 0.3; }
+  }
 
-/* Hacker Image */
-.hacker-img{
-  width:150px;
-  margin-bottom:20px;
-  border:2px solid #ff0000;
-  box-shadow:0 0 20px red;
-}
+  #matrixCanvas {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.15;
+  }
 
-/* Form Box */
-.login-box{
-  background:#111;
-  padding:30px;
-  border:2px solid #ff0000;
-  box-shadow:0 0 25px red;
-}
+  /* ===== PAGE SYSTEM ===== */
+  .page { display: none; }
+  .page.active { display: block; }
 
-input{
-  width:220px;
-  padding:12px;
-  margin:10px 0;
-  border:2px solid #ff0000;
-  background:#000;
-  color:#ff0000;
-  text-align:center;
-}
+  /* ===== LOGIN PAGE ===== */
+  .login-wrapper {
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-box {
+    max-width: 480px;
+    width: 100%;
+    background: rgba(0, 10, 0, 0.95);
+    border: 1px solid #00ff41;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 0 10px #00ff41, 0 0 40px rgba(0,255,65,0.3),
+      inset 0 0 30px rgba(0,255,65,0.05);
+    animation: slideIn 0.6s;
+    position: relative;
+    z-index: 1;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .title-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #00ff41;
+    margin-bottom: 20px;
+    font-size: 12px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot.red { background: #ff5f56; box-shadow: 0 0 6px #ff5f56; }
+  .dot.yellow { background: #ffbd2e; box-shadow: 0 0 6px #ffbd2e; }
+  .dot.green { background: #27c93f; box-shadow: 0 0 6px #27c93f; }
 
-button{
-  width:220px;
-  padding:12px;
-  border:none;
-  background:#ff0000;
-  color:#000;
-  font-weight:bold;
-  cursor:pointer;
-  transition:0.3s;
-}
+  .login-box h1 {
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 8px;
+    text-shadow: 0 0 10px #00ff41;
+    letter-spacing: 2px;
+  }
+  .login-box .subtitle {
+    text-align: center;
+    font-size: 12px;
+    color: #00aa2c;
+    margin-bottom: 25px;
+  }
+  .ascii-mini {
+    text-align: center;
+    font-size: 8px;
+    line-height: 1;
+    color: #00aa2c;
+    margin-bottom: 20px;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: #00aa2c;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  label::before { content: "> "; color: #00ff41; }
+  input {
+    width: 100%;
+    padding: 12px 14px;
+    background: #000;
+    border: 1px solid #00ff41;
+    color: #00ff41;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    outline: none;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    text-shadow: 0 0 5px #00ff41;
+    transition: all 0.2s;
+  }
+  input:focus {
+    box-shadow: 0 0 10px #00ff41, inset 0 0 10px rgba(0,255,65,0.2);
+  }
+  input::placeholder { color: rgba(0,255,65,0.3); }
 
-button:hover{
-  background:#cc0000;
-}
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: #000;
+    border: 1px solid #00ff41;
+    color: #00ff41;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 5px #00ff41;
+    transition: all 0.2s;
+    margin-bottom: 15px;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #00ff41;
+    color: #000;
+    text-shadow: none;
+    box-shadow: 0 0 20px #00ff41;
+  }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
-#loginError{
-  margin-top:10px;
-  color:#ff0000;
-}
+  .divider {
+    text-align: center;
+    color: #00aa2c;
+    font-size: 12px;
+    margin: 20px 0;
+    position: relative;
+  }
+  .divider::before, .divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: #00aa2c;
+  }
+  .divider::before { left: 0; }
+  .divider::after { right: 0; }
 
-/* TRACKER */
-#tracker{
-  display:none;
-  text-align:center;
-  padding-top:40px;
-}
+  .btn-buy {
+    width: 100%;
+    padding: 14px;
+    background: #000;
+    border: 1px solid #00ffff;
+    color: #00ffff;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 5px #00ffff;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+  }
+  .btn-buy:hover {
+    background: #00ffff;
+    color: #000;
+    text-shadow: none;
+    box-shadow: 0 0 20px #00ffff;
+  }
 
-#map{
-  height:400px;
-  width:90%;
-  margin:20px auto;
-  border:2px solid #ff0000;
-}
+  .error-box {
+    display: none;
+    padding: 10px 12px;
+    background: rgba(255,51,51,0.1);
+    border: 1px solid #ff3333;
+    color: #ff5555;
+    font-size: 12px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    text-align: center;
+    animation: shake 0.4s;
+  }
+  .error-box.active { display: block; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  .log {
+    background: #000;
+    border: 1px solid rgba(0,255,65,0.3);
+    padding: 10px;
+    font-size: 11px;
+    line-height: 1.6;
+    border-radius: 3px;
+    margin-top: 15px;
+    max-height: 100px;
+    overflow-y: auto;
+    display: none;
+  }
+  .log.active { display: block; }
+  .log-line { color: #00ff41; }
+  .log-line.err { color: #ff5555; }
+  .log-line.ok { color: #00ff41; font-weight: bold; }
+  .login-footer {
+    text-align: center;
+    font-size: 10px;
+    color: #00aa2c;
+    margin-top: 20px;
+  }
+
+  /* ===== TRACKER PAGE ===== */
+  #userInfo {
+    max-width: 950px;
+    margin: 0 auto 10px;
+    background: rgba(0,10,0,0.9);
+    border: 1px solid #00ff41;
+    border-radius: 4px;
+    padding: 8px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+    text-shadow: 0 0 5px #00ff41;
+  }
+  #userInfo .right { display: flex; gap: 15px; align-items: center; }
+  #userInfo .exp { color: #00ffff; }
+  #userInfo .exp.warning { color: #ffaa00; animation: blink 1s infinite; }
+  #userInfo .exp.danger { color: #ff3333; animation: blink 0.5s infinite; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  #userInfo .logout {
+    color: #ff5555; text-decoration: none; cursor: pointer;
+    border: 1px solid #ff5555; padding: 3px 8px;
+    border-radius: 3px; transition: all 0.2s;
+  }
+  #userInfo .logout:hover { background: #ff5555; color: #000; }
+
+  .terminal {
+    max-width: 950px;
+    margin: 0 auto;
+    background: rgba(0,10,0,0.92);
+    border: 1px solid #00ff41;
+    border-radius: 6px;
+    box-shadow: 0 0 5px #00ff41, 0 0 20px rgba(0,255,65,0.3),
+      inset 0 0 30px rgba(0,255,65,0.05);
+    overflow: hidden;
+  }
+  .term-title-bar {
+    background: linear-gradient(90deg, #001a00, #003300, #001a00);
+    padding: 8px 15px;
+    border-bottom: 1px solid #00ff41;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+  }
+  .title-text {
+    margin-left: auto;
+    color: #00ff41;
+    text-shadow: 0 0 5px #00ff41;
+    letter-spacing: 1px;
+  }
+  .term-body { padding: 20px; min-height: 400px; }
+  .ascii-header {
+    color: #00ff41; font-size: 10px; line-height: 1.1;
+    text-align: center; margin-bottom: 20px;
+    text-shadow: 0 0 8px #00ff41; white-space: pre; overflow-x: auto;
+  }
+  .glitch {
+    font-size: 18px; font-weight: bold; text-align: center;
+    color: #00ff41; text-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41;
+    margin-bottom: 10px; letter-spacing: 2px;
+    animation: glitchSkew 3s infinite;
+  }
+  @keyframes glitchSkew {
+    0%, 90%, 100% { transform: skew(0deg); }
+    92% { transform: skew(2deg); }
+    94% { transform: skew(-2deg); }
+    96% { transform: skew(1deg); }
+  }
+  .prompt-line {
+    margin-bottom: 15px; font-size: 14px;
+    color: #00ff41; text-shadow: 0 0 4px #00ff41;
+    word-break: break-all;
+  }
+  .prompt-path { color: #00ffaa; }
+  .prompt-symbol { color: #ffffff; }
+  .input-group {
+    display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+    border: 1px solid #00ff41; padding: 10px;
+    background: rgba(0,255,65,0.03);
+    border-radius: 4px;
+    box-shadow: inset 0 0 15px rgba(0,255,65,0.1);
+  }
+  .input-prefix {
+    color: #00ff41; font-size: 15px; display: flex;
+    align-items: center; text-shadow: 0 0 5px #00ff41;
+  }
+  input[type="tel"] {
+    flex: 1; min-width: 180px; padding: 10px 12px;
+    background: #000; border: 1px solid #00ff41;
+    color: #00ff41; font-family: 'Courier New', monospace;
+    font-size: 15px; outline: none; caret-color: #00ff41;
+    text-shadow: 0 0 5px #00ff41; border-radius: 3px;
+    margin-bottom: 0;
+  }
+  input[type="tel"]::placeholder { color: rgba(0,255,65,0.4); }
+  input[type="tel"]:focus { box-shadow: 0 0 10px #00ff41, inset 0 0 10px rgba(0,255,65,0.2); }
+
+  .btn-track {
+    padding: 10px 22px; background: #000;
+    border: 1px solid #00ff41; color: #00ff41;
+    font-family: 'Courier New', monospace;
+    font-size: 14px; font-weight: bold; cursor: pointer;
+    border-radius: 3px; text-shadow: 0 0 5px #00ff41;
+    letter-spacing: 1px; transition: all 0.2s;
+  }
+  .btn-track:hover:not(:disabled) {
+    background: #00ff41; color: #000; text-shadow: none;
+    box-shadow: 0 0 15px #00ff41;
+  }
+  .btn-track:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .term-log {
+    background: #000; border: 1px solid rgba(0,255,65,0.3);
+    padding: 12px; font-size: 13px; line-height: 1.7;
+    max-height: 220px; overflow-y: auto; margin-bottom: 15px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 20px rgba(0,255,65,0.08);
+    display: none;
+  }
+  .term-log.active { display: block; }
+  .term-log::-webkit-scrollbar { width: 8px; }
+  .term-log::-webkit-scrollbar-track { background: #000; }
+  .term-log::-webkit-scrollbar-thumb { background: #00ff41; border-radius: 4px; }
+  .log-line-2 { color: #00ff41; text-shadow: 0 0 3px #00ff41; }
+  .log-time { color: #00aa2c; }
+  .log-ok { color: #00ff41; font-weight: bold; }
+  .log-warn { color: #ffff00; }
+  .log-err { color: #ff3333; }
+  .log-info { color: #00ffff; }
+
+  .cursor {
+    display: inline-block; width: 10px; height: 16px;
+    background: #00ff41; box-shadow: 0 0 8px #00ff41;
+    animation: blink2 0.8s infinite; vertical-align: middle; margin-left: 3px;
+  }
+  @keyframes blink2 { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+  #result { display: none; margin-top: 15px; }
+  #result.active { display: block; animation: slideIn2 0.5s; }
+  @keyframes slideIn2 {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  #map {
+    height: 340px; border: 1px solid #00ff41;
+    border-radius: 3px; margin-bottom: 15px;
+    box-shadow: 0 0 15px rgba(0,255,65,0.4), inset 0 0 10px rgba(0,255,65,0.1);
+    filter: hue-rotate(80deg) saturate(1.5) brightness(0.8) contrast(1.2);
+  }
+  .data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 10px;
+  }
+  .data-cell {
+    background: rgba(0,255,65,0.04);
+    border: 1px solid rgba(0,255,65,0.4);
+    border-left: 3px solid #00ff41;
+    padding: 10px 12px; border-radius: 3px;
+  }
+  .data-cell:hover { background: rgba(0,255,65,0.1); box-shadow: 0 0 12px rgba(0,255,65,0.4); }
+  .data-key {
+    font-size: 11px; color: #00aa2c;
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px;
+  }
+  .data-key::before { content: "> "; color: #00ff41; }
+  .data-value {
+    font-size: 15px; color: #00ff41; font-weight: bold;
+    text-shadow: 0 0 5px #00ff41; word-break: break-all;
+  }
+  .warning-box {
+    margin-top: 15px; padding: 10px 15px;
+    border: 1px dashed #ff3333;
+    background: rgba(255,51,51,0.05);
+    color: #ff5555; font-size: 12px; text-align: center;
+    text-shadow: 0 0 5px #ff3333;
+    animation: warnPulse 2s infinite; border-radius: 3px;
+  }
+  @keyframes warnPulse {
+    0%,100% { box-shadow: 0 0 5px rgba(255,51,51,0.3); }
+    50% { box-shadow: 0 0 20px rgba(255,51,51,0.7); }
+  }
+  .progress-container { margin-top: 12px; display: none; }
+  .progress-container.active { display: block; }
+  .progress-label {
+    font-size: 12px; color: #00ff41; margin-bottom: 5px;
+    display: flex; justify-content: space-between; text-shadow: 0 0 4px #00ff41;
+  }
+  .progress-bar-hack {
+    width: 100%; height: 16px; background: #000;
+    border: 1px solid #00ff41; position: relative;
+    overflow: hidden; box-shadow: inset 0 0 10px rgba(0,255,65,0.2);
+  }
+  .progress-fill-hack {
+    height: 100%; width: 0%;
+    background: repeating-linear-gradient(45deg,
+      #00ff41, #00ff41 8px, #00aa2c 8px, #00aa2c 16px);
+    transition: width 0.3s; box-shadow: 0 0 10px #00ff41;
+  }
+  .ascii-footer {
+    margin-top: 15px; text-align: center;
+    font-size: 10px; color: #00aa2c;
+    line-height: 1.3; white-space: pre; overflow-x: auto;
+  }
+
+  @media (max-width: 600px) {
+    .ascii-header { font-size: 7px; }
+    .glitch { font-size: 14px; }
+    .term-body { padding: 12px; }
+    .login-box { padding: 20px; }
+    #map { height: 260px; }
+  }
 </style>
 </head>
-
 <body>
 
-<!-- LOGIN -->
-<div id="login">
- 
-  
-  <div class="login-box">
-    <h2>SECURE ACCESS</h2>
-    <input type="text" id="username" placeholder="Username"><br>
-    <input type="password" id="password" placeholder="Password"><br>
-    <button onclick="login()">KONFIRMASI</button>
-    <p id="loginError"></p>
+<canvas id="matrixCanvas"></canvas>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- HALAMAN LOGIN -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page active" id="pageLogin">
+  <div class="login-wrapper">
+    <div class="login-box">
+      <div class="title-bar">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+        <span style="margin-left:auto; color:#00ff41;">[ SECURE LOGIN ]</span>
+      </div>
+
+      <div class="ascii-mini">╔════════════════════════════╗
+║  LOGIN  AUTHENTICATION     ║
+╚════════════════════════════╝</div>
+
+      <h1>🔐 AKSES TERBATAS</h1>
+      <p class="subtitle">Masukkan kredensial untuk melanjutkan</p>
+
+      <div class="error-box" id="errorBox"></div>
+
+      <label>Username</label>
+      <input type="text" id="username" placeholder="username_anda" autocomplete="username">
+
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+
+      <button class="btn-primary" id="loginBtn" onclick="doLogin()">[ MASUK ]</button>
+
+      <div class="divider">ATAU</div>
+
+      <a href="#" class="btn-buy" onclick="goToBot(event)">
+        💳 Belum punya akun? Klik ini untuk membeli akses website
+      </a>
+
+      <div class="log" id="loginLog"></div>
+
+      <div class="login-footer">[ ENCRYPTED SESSION ] · [ v1.0.0 ]</div>
+    </div>
   </div>
 </div>
 
-<!-- TRACKER -->
-<div id="tracker">
-  <h2>TRACKING SYSTEM INDONESIA</h2>
-  <input type="text" id="nomor" placeholder="Masukkan Nomor HP"><br>
-  <button onclick="acakLokasi()">LACAK SEKARANG</button>
-  <div id="hasil"></div>
-  <div id="map"></div>
+<!-- ═══════════════════════════════════════════ -->
+<!-- HALAMAN TRACKER -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page" id="pageTracker">
+
+  <div id="userInfo">
+    <div class="left">
+      👤 <span id="uiUsername">-</span> | 🆔 <span id="uiSession">-</span>
+    </div>
+    <div class="right">
+      <span class="exp" id="uiExp">⏰ -</span>
+      <a class="logout" onclick="doLogout()">[LOGOUT]</a>
+    </div>
+  </div>
+
+  <div class="terminal">
+    <div class="term-title-bar">
+      <span class="dot red"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+      <span class="title-text">┌─[ GEO-TRACKER v3.7.1 ]─[ SECURE SHELL ]─┐</span>
+    </div>
+
+    <div class="term-body">
+      <div class="ascii-header">╔══════════════════════════════════════════════════════════════╗
+║  ██████╗ ███████╗ ██████╗     ████████╗██████╗  █████╗  ██████╗██╗  ██╗ ║
+║ ██╔════╝ ██╔════╝██╔═══██╗    ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝ ║
+║ ██║  ███╗█████╗  ██║   ██║       ██║   ██████╔╝███████║██║     █████╔╝  ║
+║ ██║   ██║██╔══╝  ██║   ██║       ██║   ██╔══██╗██╔══██║██║     ██╔═██╗  ║
+║ ╚██████╔╝███████╗╚██████╔╝       ██║   ██║  ██║██║  ██║╚██████╗██║  ██║ ║
+║  ╚═════╝ ╚══════╝ ╚═════╝        ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝ ║
+╚══════════════════════════════════════════════════════════════╝</div>
+
+      <div class="glitch">[ SYSTEM LOCATION TRACKER ACTIVE ]</div>
+
+      <div class="term-log active" id="initLog">
+        <div class="log-line-2"><span class="log-time">[00:00:01]</span> <span class="log-ok">[OK]</span> Initializing geo-tracker kernel...</div>
+        <div class="log-line-2"><span class="log-time">[00:00:02]</span> <span class="log-ok">[OK]</span> Loading satellite modules... 24/24 online</div>
+        <div class="log-line-2"><span class="log-time">[00:00:03]</span> <span class="log-ok">[OK]</span> Network interface: <span class="log-info">eth0</span> connected</div>
+        <div class="log-line-2"><span class="log-time">[00:00:04]</span> <span class="log-warn">[WARN]</span> Anonymous proxy: ACTIVE</div>
+        <div class="log-line-2"><span class="log-time">[00:00:05]</span> <span class="log-ok">[OK]</span> Encryption: <span class="log-info">AES-256-GCM</span></div>
+        <div class="log-line-2"><span class="log-time">[00:00:06]</span> <span class="log-ok">[OK]</span> Database lokasi: <span class="log-info">133 entries loaded</span></div>
+        <div class="log-line-2"><span class="log-time">[00:00:07]</span> <span class="log-ok">[OK]</span> User authenticated. Welcome!</div>
+        <div class="log-line-2"><span class="log-time">[00:00:08]</span> <span class="log-ok">[OK]</span> Ready to receive target phone number...</div>
+      </div>
+
+      <div class="prompt-line">
+        <span class="prompt-user">root@tracker</span>:<span class="prompt-path">~/sys/track</span><span class="prompt-symbol">$</span> ./inject_target.sh
+        <span class="cursor"></span>
+      </div>
+
+      <div class="input-group">
+        <span class="input-prefix">TARGET_PHONE></span>
+        <input type="tel" id="phoneInput" placeholder="08xxxxxxxxxx" maxlength="15" autocomplete="off">
+        <button class="btn-track" id="trackBtn" onclick="startTracking()">[ EXECUTE ]</button>
+      </div>
+
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-label">
+          <span id="progressStage">INITIALIZING...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar-hack">
+          <div class="progress-fill-hack" id="progressFill"></div>
+        </div>
+      </div>
+
+      <div class="term-log" id="termLog"></div>
+
+      <div id="result">
+        <div id="map"></div>
+        <div class="data-grid">
+          <div class="data-cell"><div class="data-key">TARGET_NUMBER</div><div class="data-value" id="resPhone">-</div></div>
+          <div class="data-cell"><div class="data-key">PROVIDER_NETWORK</div><div class="data-value" id="resProvider">-</div></div>
+          <div class="data-cell"><div class="data-key">COORDINATES</div><div class="data-value" id="resCoords">-</div></div>
+          <div class="data-cell"><div class="data-key">LOCATION_ADDR</div><div class="data-value" id="resAddress">-</div></div>
+          <div class="data-cell"><div class="data-key">AREA_TYPE</div><div class="data-value" id="resAreaType">-</div></div>
+          <div class="data-cell"><div class="data-key">TIMESTAMP</div><div class="data-value" id="resTime">-</div></div>
+          <div class="data-cell"><div class="data-key">ACCURACY_LEVEL</div><div class="data-value" id="resAccuracy">-</div></div>
+        </div>
+      </div>
+
+      <div class="warning-box">
+        [!] SIMULASI / PRANK — Data lokasi RANDOM, tidak nyata. [!]
+      </div>
+
+      <div class="ascii-footer">[ SESSION ENCRYPTED ] · [ NODE: JKT-07 ] · [ UPTIME: 00:00:00 ]</div>
+    </div>
+  </div>
 </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-function login(){
-  const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
+// ═══════════════════════════════════════════════
+// MATRIX BACKGROUND
+// ═══════════════════════════════════════════════
+const canvas = document.getElementById('matrixCanvas');
+const ctx = canvas.getContext('2d');
+function resizeCanvas() { canvas.width = innerWidth; canvas.height = innerHeight; }
+resizeCanvas();
+addEventListener('resize', resizeCanvas);
+const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const fontSize = 14;
+let columns = Math.floor(canvas.width / fontSize);
+let drops = Array(columns).fill(1);
+setInterval(() => {
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#00ff41';
+  ctx.font = fontSize + 'px monospace';
+  for (let i = 0; i < drops.length; i++) {
+    ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, drops[i] * fontSize);
+    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}, 50);
+addEventListener('resize', () => {
+  columns = Math.floor(canvas.width / fontSize);
+  drops = Array(columns).fill(1);
+});
 
-  if(user === "HamzzXploit1" && pass === "hamzzgacor1"){
-    document.getElementById("login").style.display = "none";
-    document.getElementById("tracker").style.display = "block";
-  }else{
-    document.getElementById("loginError").innerText = "AKSES DITOLAK!";
+// ═══════════════════════════════════════════════
+// PAGE SWITCHER + AUTH CHECK
+// ═══════════════════════════════════════════════
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+}
+
+function checkAuth() {
+  const token = localStorage.getItem('authToken');
+  const expiresAt = localStorage.getItem('expiresAt');
+  if (!token || !expiresAt) return false;
+  if (expiresAt !== 'PERMANENT' && Date.now() >= new Date(expiresAt).getTime()) {
+    localStorage.clear();
+    return false;
+  }
+  return true;
+}
+
+window.addEventListener('load', () => {
+  if (checkAuth()) {
+    showPage('pageTracker');
+    initUserInfo();
+    verifyServer();
+  } else {
+    showPage('pageLogin');
+  }
+});
+
+function verifyServer() {
+  const token = localStorage.getItem('authToken');
+  fetch(`${API_URL}/api/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.valid) {
+      localStorage.clear();
+      alert('Sesi tidak valid. Silakan login ulang.');
+      location.reload();
+    }
+  })
+  .catch(() => console.warn('Server offline, grace mode'));
+}
+
+// ═══════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════
+async function doLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const btn = document.getElementById('loginBtn');
+  const errBox = document.getElementById('errorBox');
+  const log = document.getElementById('loginLog');
+
+  errBox.classList.remove('active');
+  log.classList.remove('active');
+  log.innerHTML = '';
+
+  if (!username || !password) { showError('Username dan password wajib diisi!'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '[ MEMVERIFIKASI... ]';
+  log.classList.add('active');
+  addLoginLog('Menghubungi server autentikasi...', 'info');
+
+  try {
+    const res = await fetch(`${API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    addLoginLog('Respon diterima: ' + res.status, 'info');
+
+    if (data.success) {
+      addLoginLog('Autentikasi berhasil!', 'ok');
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('username', username);
+      localStorage.setItem('expiresAt', data.expiresAt);
+      addLoginLog('Mengalihkan...', 'ok');
+      setTimeout(() => {
+        showPage('pageTracker');
+        initUserInfo();
+      }, 800);
+    } else {
+      addLoginLog('GAGAL: ' + data.message, 'err');
+      showError(data.message || 'Login gagal!');
+      btn.disabled = false;
+      btn.textContent = '[ MASUK ]';
+    }
+  } catch (err) {
+    addLoginLog('Error: ' + err.message, 'err');
+    showError('Tidak dapat terhubung ke server.');
+    btn.disabled = false;
+    btn.textContent = '[ MASUK ]';
   }
 }
 
-const kotaIndonesia = [
-  {nama:"Jakarta", lat:-6.2088, long:106.8456},
-  {nama:"Bandung", lat:-6.9175, long:107.6191},
-  {nama:"Surabaya", lat:-7.2575, long:112.7521},
-  {nama:"Medan", lat:3.5952, long:98.6722},
-  {nama:"Makassar", lat:-5.1477, long:119.4327},
-  {nama:"Yogyakarta", lat:-7.7956, long:110.3695},
-  {nama:"Semarang", lat:-6.9667, long:110.4167},
-  {nama:"Denpasar", lat:-8.6500, long:115.2167},
-  {nama:"Palembang", lat:-2.9761, long:104.7754},
-  {nama:"Balikpapan", lat:-1.2654, long:116.8312},
-  {nama:"Pontianak", lat:-0.0263, long:109.3425},
-  {nama:"Manado", lat:1.4748, long:124.8421},
-  {nama:"Padang", lat:-0.9471, long:100.4172},
-  {nama:"Banjarmasin", lat:-3.3186, long:114.5944},
-  {nama:"Jayapura", lat:-2.5337, long:140.7181}
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = '⚠️ ' + msg;
+  box.classList.add('active');
+}
+
+function addLoginLog(msg, type = 'info') {
+  const log = document.getElementById('loginLog');
+  const line = document.createElement('div');
+  line.className = 'log-line' + (type === 'err' ? ' err' : type === 'ok' ? ' ok' : '');
+  line.textContent = `[${new Date().toLocaleTimeString('id-ID')}] ${msg}`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function goToBot(e) {
+  e.preventDefault();
+  const botUrl = `https://t.me/${TELEGRAM_BOT}`;
+  if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    window.location.href = `tg://resolve?domain=${TELEGRAM_BOT}`;
+    setTimeout(() => window.open(botUrl, '_blank'), 1500);
+  } else {
+    window.open(botUrl, '_blank');
+  }
+}
+
+document.getElementById('password').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ═══════════════════════════════════════════════
+// USER INFO
+// ═══════════════════════════════════════════════
+function initUserInfo() {
+  document.getElementById('uiUsername').textContent = localStorage.getItem('username') || 'user';
+  document.getElementById('uiSession').textContent = 'SES-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+  updateExpiryDisplay();
+  setInterval(checkExpiry, 60000);
+  setInterval(updateExpiryDisplay, 30000);
+}
+
+function updateExpiryDisplay() {
+  const expiresAt = localStorage.getItem('expiresAt');
+  const el = document.getElementById('uiExp');
+  if (!el) return;
+  if (expiresAt === 'PERMANENT') { el.textContent = '⏰ PERMANEN'; el.className = 'exp'; return; }
+  const diff = new Date(expiresAt).getTime() - Date.now();
+  if (diff <= 0) { el.textContent = '⏰ EXPIRED'; el.className = 'exp danger'; return; }
+  const days = Math.floor(diff / (24 * 3600 * 1000));
+  const hours = Math.floor((diff % (24 * 3600 * 1000)) / (3600 * 1000));
+  let text, cls;
+  if (days > 7) { text = `⏰ ${days} hari lagi`; cls = 'exp'; }
+  else if (days > 1) { text = `⏰ ${days} hari ${hours}j lagi`; cls = 'exp warning'; }
+  else { text = `⚠️ ${hours} jam lagi`; cls = 'exp danger'; }
+  el.textContent = text; el.className = cls;
+}
+
+function checkExpiry() {
+  const expiresAt = localStorage.getItem('expiresAt');
+  if (!expiresAt || expiresAt === 'PERMANENT') return;
+  if (Date.now() >= new Date(expiresAt).getTime()) {
+    alert('⏰ Akses Anda telah berakhir!');
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+function doLogout() {
+  if (confirm('Yakin ingin logout?')) { localStorage.clear(); location.reload(); }
+}
+
+// ═══════════════════════════════════════════════
+// TRACKER DATA
+// ═══════════════════════════════════════════════
+const providers = [
+  { name: "TELKOMSEL", prefixes: ["0811","0812","0813","0821","0822","0823","0851","0852","0853"] },
+  { name: "INDOSAT_OOREDOO", prefixes: ["0814","0815","0816","0855","0856","0857","0858"] },
+  { name: "XL_AXIATA", prefixes: ["0817","0818","0819","0859","0877","0878"] },
+  { name: "TRI_3", prefixes: ["0895","0896","0897","0898","0899"] },
+  { name: "SMARTFREN", prefixes: ["0881","0882","0883","0884","0885","0886","0887","0888","0889"] },
+  { name: "AXIS", prefixes: ["0831","0832","0833","0838"] }
 ];
 
-let map;
-let marker;
+const locations = [
+  { name: "JAKARTA_PUSAT, DKI_JAKARTA", lat: -6.1805, lng: 106.8284, type: "METRO" },
+  { name: "SURABAYA, JAWA_TIMUR", lat: -7.2575, lng: 112.7521, type: "METRO" },
+  { name: "BANDUNG, JAWA_BARAT", lat: -6.9175, lng: 107.6191, type: "METRO" },
+  { name: "MEDAN, SUMATERA_UTARA", lat: 3.5952, lng: 98.6722, type: "METRO" },
+  { name: "SEMARANG, JAWA_TENGAH", lat: -6.9667, lng: 110.4167, type: "METRO" },
+  { name: "MAKASSAR, SULAWESI_SELATAN", lat: -5.1477, lng: 119.4327, type: "METRO" },
+  { name: "PALEMBANG, SUMATERA_SELATAN", lat: -2.9761, lng: 104.7754, type: "METRO" },
+  { name: "TANGERANG, BANTEN", lat: -6.1783, lng: 106.6319, type: "METRO" },
+  { name: "DEPOK, JAWA_BARAT", lat: -6.4025, lng: 106.7942, type: "METRO" },
+  { name: "BEKASI, JAWA_BARAT", lat: -6.2383, lng: 106.9756, type: "METRO" },
+  { name: "YOGYAKARTA, DIY", lat: -7.7956, lng: 110.3695, type: "KOTA" },
+  { name: "DENPASAR, BALI", lat: -8.6705, lng: 115.2126, type: "KOTA" },
+  { name: "BALIKPAPAN, KALTIM", lat: -1.2379, lng: 116.8529, type: "KOTA" },
+  { name: "PONTIANAK, KALBAR", lat: -0.0263, lng: 109.3425, type: "KOTA" },
+  { name: "MANADO, SULUT", lat: 1.4748, lng: 124.8421, type: "KOTA" },
+  { name: "PADANG, SUMBAR", lat: -0.9471, lng: 100.4172, type: "KOTA" },
+  { name: "BANJARMASIN, KALSEL", lat: -3.3186, lng: 114.5944, type: "KOTA" },
+  { name: "PEKANBARU, RIAU", lat: 0.5071, lng: 101.4478, type: "KOTA" },
+  { name: "BOGOR, JABAR", lat: -6.5971, lng: 106.8060, type: "KOTA" },
+  { name: "MALANG, JATIM", lat: -7.9666, lng: 112.6326, type: "KOTA" },
+  { name: "SOLO, JATENG", lat: -7.5755, lng: 110.8243, type: "KOTA" },
+  { name: "BATAM, KEPRI", lat: 1.1301, lng: 104.0529, type: "KOTA" },
+  { name: "GARUT, JABAR", lat: -7.2094, lng: 107.8875, type: "KABUPATEN" },
+  { name: "TASIKMALAYA, JABAR", lat: -7.3274, lng: 108.2207, type: "KABUPATEN" },
+  { name: "CIANJUR, JABAR", lat: -6.8168, lng: 107.1425, type: "KABUPATEN" },
+  { name: "SUKABUMI, JABAR", lat: -6.9277, lng: 106.9300, type: "KABUPATEN" },
+  { name: "BANYUWANGI, JATIM", lat: -8.2192, lng: 114.3691, type: "KABUPATEN" },
+  { name: "JEMBER, JATIM", lat: -8.1689, lng: 113.7020, type: "KABUPATEN" },
+  { name: "KEDIRI, JATIM", lat: -7.8480, lng: 112.0178, type: "KABUPATEN" },
+  { name: "MADIUN, JATIM", lat: -7.6298, lng: 111.5239, type: "KABUPATEN" },
+  { name: "PURWOKERTO, JATENG", lat: -7.4249, lng: 109.2396, type: "KABUPATEN" },
+  { name: "MAGELANG, JATENG", lat: -7.4698, lng: 110.2177, type: "KABUPATEN" },
+  { name: "KLATEN, JATENG", lat: -7.7057, lng: 110.6015, type: "KABUPATEN" },
+  { name: "BANYUMAS, JATENG", lat: -7.5147, lng: 109.2933, type: "KABUPATEN" },
+  { name: "KULON_PROGO, DIY", lat: -7.8267, lng: 110.1645, type: "KABUPATEN" },
+  { name: "BANTUL, DIY", lat: -7.8883, lng: 110.3292, type: "KABUPATEN" },
+  { name: "SLEMAN, DIY", lat: -7.7326, lng: 110.3553, type: "KABUPATEN" },
+  { name: "GIANYAR, BALI", lat: -8.5433, lng: 115.2620, type: "KABUPATEN" },
+  { name: "TABANAN, BALI", lat: -8.5385, lng: 115.1226, type: "KABUPATEN" },
+  { name: "KARANGASEM, BALI", lat: -8.4531, lng: 115.6169, type: "KABUPATEN" },
+  { name: "LOMBOK_BARAT, NTB", lat: -8.5852, lng: 116.1172, type: "KABUPATEN" },
+  { name: "SUMBAWA, NTB", lat: -8.4989, lng: 117.4203, type: "KABUPATEN" },
+  { name: "KUPANG, NTT", lat: -10.1772, lng: 123.6070, type: "KABUPATEN" },
+  { name: "MAUMERE, NTT", lat: -8.6199, lng: 122.2111, type: "KABUPATEN" },
+  { name: "KEC. CISARUA, BOGOR", lat: -6.6513, lng: 106.9368, type: "KECAMATAN" },
+  { name: "KEC. PUNCAK, BOGOR", lat: -6.6909, lng: 106.9773, type: "KECAMATAN" },
+  { name: "KEC. LEMBANG, BANDUNG_BARAT", lat: -6.8119, lng: 107.6172, type: "KECAMATAN" },
+  { name: "KEC. CIATER, SUBANG", lat: -6.7200, lng: 107.6600, type: "KECAMATAN" },
+  { name: "KEC. TRAWAS, MOJOKERTO", lat: -7.6492, lng: 112.5985, type: "KECAMATAN" },
+  { name: "KEC. PACET, MOJOKERTO", lat: -7.6651, lng: 112.5461, type: "KECAMATAN" },
+  { name: "KEC. PRIGEN, PASURUAN", lat: -7.7000, lng: 112.8500, type: "KECAMATAN" },
+  { name: "KEC. NGADAS, MALANG", lat: -7.9666, lng: 112.9326, type: "KECAMATAN" },
+  { name: "KEC. BROMO, PROBOLINGGO", lat: -7.9425, lng: 112.9530, type: "KECAMATAN" },
+  { name: "KEC. KINTAMANI, BANGLI", lat: -8.2413, lng: 115.3281, type: "KECAMATAN" },
+  { name: "KEC. BEDUGUL, TABANAN", lat: -8.2795, lng: 115.1676, type: "KECAMATAN" },
+  { name: "KEC. KALIURANG, SLEMAN", lat: -7.6055, lng: 110.4272, type: "KECAMATAN" },
+  { name: "KEC. PARANGTRITIS, BANTUL", lat: -8.0261, lng: 110.3306, type: "KECAMATAN" },
+  { name: "DESA SUKAMAJU, GARUT", lat: -7.2847, lng: 107.7453, type: "DESA" },
+  { name: "DESA CIKALONG, CIANJUR", lat: -6.8407, lng: 107.2876, type: "DESA" },
+  { name: "DESA WARUNGKIARA, SUKABUMI", lat: -6.9160, lng: 106.7480, type: "DESA" },
+  { name: "DESA CIBODAS, LEMBANG", lat: -6.8021, lng: 107.6701, type: "DESA" },
+  { name: "DESA SINDANGKERTA, CIANJUR", lat: -6.7764, lng: 107.2848, type: "DESA" },
+  { name: "DESA PACET, CIANJUR", lat: -6.7519, lng: 107.0494, type: "DESA" },
+  { name: "DESA KEMBANG, JEPARA", lat: -6.6117, lng: 110.7558, type: "DESA" },
+  { name: "DESA KARIMUNJAWA, JEPARA", lat: -5.8667, lng: 110.4333, type: "DESA" },
+  { name: "DESA PANTAI MOENG, BANYUWANGI", lat: -8.5858, lng: 114.2055, type: "DESA" },
+  { name: "DESA SUKORAME, KEDIRI", lat: -7.8273, lng: 112.0098, type: "DESA" },
+  { name: "DESA NGADISARI, PROBOLINGGO", lat: -7.9083, lng: 112.9989, type: "DESA" },
+  { name: "DESA BUANA GIRI, JEMBRANA", lat: -8.3523, lng: 114.5987, type: "DESA" },
+  { name: "DESA PENGELIPURAN, BANGLI", lat: -8.3844, lng: 115.3350, type: "DESA" },
+  { name: "DESA WISATA PENGLIPURAN, BALI", lat: -8.3877, lng: 115.3594, type: "DESA" },
+  { name: "DESA TETEBATU, SULSEL", lat: -2.6123, lng: 121.3555, type: "DESA" },
+  { name: "DESA WAEREBO, NTT", lat: -8.7603, lng: 120.9664, type: "DESA" },
+  { name: "DESA KAMPUNG NAGA, TASIKMALAYA", lat: -7.3399, lng: 107.9112, type: "DESA" },
+  { name: "DESA SADE, LOMBOK_TENGAH", lat: -8.7676, lng: 116.2829, type: "DESA" },
+  { name: "DESA WAE REBO, MANGGARAI", lat: -8.7739, lng: 120.9617, type: "DESA" },
+  { name: "DESA TAKPALA, ALOR", lat: -8.3492, lng: 124.6182, type: "DESA" },
+  { name: "PEDALAMAN_BORNEO, KALIMANTAN", lat: 0.5321, lng: 113.8767, type: "REMOTE" },
+  { name: "PEDALAMAN_PAPUA, WAMENA", lat: -4.0996, lng: 138.9449, type: "REMOTE" },
+  { name: "PEDALAMAN_SUMATERA, ACEH", lat: 4.6951, lng: 96.7497, type: "REMOTE" },
+  { name: "HUTAN_LINDU_PAPUA", lat: -4.0214, lng: 137.5044, type: "REMOTE" },
+  { name: "DANAU_SENTANI, PAPUA", lat: -2.5886, lng: 140.4982, type: "REMOTE" },
+  { name: "PULAU_SIBERUT, MENTAWAI", lat: -1.3800, lng: 98.9200, type: "REMOTE" },
+  { name: "PULAU_ENGGAO, BENGKULU", lat: -5.4167, lng: 102.2833, type: "REMOTE" },
+  { name: "PULAU_TIDORE, MALUKU", lat: 0.7500, lng: 127.5000, type: "REMOTE" },
+  { name: "PULAU_HALMAHERA, MALUKU", lat: 1.0333, lng: 128.1500, type: "REMOTE" },
+  { name: "PULAU_MOROTAI, MALUT", lat: 2.3167, lng: 128.4167, type: "REMOTE" },
+  { name: "PULAU_ROTE, NTT", lat: -10.7447, lng: 123.0744, type: "REMOTE" },
+  { name: "PULAU_SABANG, ACEH", lat: 5.8936, lng: 95.3222, type: "REMOTE" },
+  { name: "PULAU_MENTAWAI, SUMBAR", lat: -2.2000, lng: 99.6000, type: "REMOTE" },
+  { name: "PULAU_NIAS, SUMUT", lat: 1.1333, lng: 97.6167, type: "REMOTE" },
+  { name: "PULAU_BELITUNG, BABEL", lat: -2.8333, lng: 107.9167, type: "REMOTE" },
+  { name: "PULAU_SAMOSIR, SUMUT", lat: 2.1000, lng: 98.8000, type: "REMOTE" },
+  { name: "GUNUNG_BROMO, JATIM", lat: -7.9425, lng: 112.9530, type: "MOUNTAIN" },
+  { name: "GUNUNG_SEMERU, JATIM", lat: -8.1081, lng: 112.9222, type: "MOUNTAIN" },
+  { name: "GUNUNG_MERAPI, DIY", lat: -7.5407, lng: 110.4457, type: "MOUNTAIN" },
+  { name: "GUNUNG_SINDORO, JATENG", lat: -7.2968, lng: 109.9970, type: "MOUNTAIN" },
+  { name: "GUNUNG_SUMBING, JATENG", lat: -7.3800, lng: 110.0700, type: "MOUNTAIN" },
+  { name: "GUNUNG_PRAU, JATENG", lat: -7.3800, lng: 110.0000, type: "MOUNTAIN" },
+  { name: "GUNUNG_RINJANI, LOMBOK", lat: -8.4139, lng: 116.4578, type: "MOUNTAIN" },
+  { name: "GUNUNG_AGUNG, BALI", lat: -8.3428, lng: 115.5075, type: "MOUNTAIN" },
+  { name: "GUNUNG_KERINCI, JAMBI", lat: -1.6970, lng: 101.2640, type: "MOUNTAIN" },
+  { name: "GUNUNG_LEUSER, ACEH", lat: 3.8000, lng: 97.2000, type: "MOUNTAIN" },
+  { name: "GUNUNG_LOKON, SULUT", lat: 1.3500, lng: 124.8300, type: "MOUNTAIN" },
+  { name: "PUNCAK_JAYAWIJAYA, PAPUA", lat: -4.0783, lng: 137.1583, type: "MOUNTAIN" },
+  { name: "PANTAI_KUTA, BALI", lat: -8.7181, lng: 115.1686, type: "COASTAL" },
+  { name: "PANTAI_PARANGTRITIS, DIY", lat: -8.0261, lng: 110.3306, type: "COASTAL" },
+  { name: "PANTAI_PANGANDARAN, JABAR", lat: -7.6833, lng: 108.6500, type: "COASTAL" },
+  { name: "PANTAI_ANYER, BANTEN", lat: -6.0667, lng: 105.8833, type: "COASTAL" },
+  { name: "PANTAI_CARITA, LAMPUNG", lat: -5.9333, lng: 105.8167, type: "COASTAL" },
+  { name: "PANTAI_KUTA_LOMBOK, NTB", lat: -8.8933, lng: 116.2833, type: "COASTAL" },
+  { name: "PANTAI_NIHLIWATU, SUMBA", lat: -9.7500, lng: 119.3000, type: "COASTAL" },
+  { name: "PANTAI_PINK_BEACH, FLORES", lat: -8.5833, lng: 119.8500, type: "COASTAL" },
+  { name: "PANTAI_RAJA_AMPAT, PAPUA", lat: -0.5000, lng: 130.0000, type: "COASTAL" },
+  { name: "PULAU_MENJANGAN, BALI", lat: -8.0900, lng: 114.5100, type: "COASTAL" },
+  { name: "PULAU_GILI_TRAWANGAN, LOMBOK", lat: -8.3500, lng: 116.0500, type: "COASTAL" },
+  { name: "PULAU_KOMODO, NTT", lat: -8.5500, lng: 119.4833, type: "COASTAL" },
+  { name: "PULAU_PADAR, NTT", lat: -8.6667, lng: 119.5833, type: "COASTAL" },
+  { name: "PULAU_DERAWAN, KALTIM", lat: 2.1500, lng: 118.5000, type: "COASTAL" },
+  { name: "AREA_SAWAH_KARAWANG, JABAR", lat: -6.3015, lng: 107.3063, type: "RURAL" },
+  { name: "AREA_SAWAH_INDRAMAYU, JABAR", lat: -6.3373, lng: 108.3255, type: "RURAL" },
+  { name: "AREA_SAWAH_NGAWI, JATIM", lat: -7.4000, lng: 111.4500, type: "RURAL" },
+  { name: "PERKEBUNAN_KARET, SUMUT", lat: 3.5000, lng: 98.5000, type: "RURAL" },
+  { name: "PERKEBUNAN_SAWIT, RIAU", lat: 0.8000, lng: 101.5000, type: "RURAL" },
+  { name: "PERKEBUNAN_SAWIT, KALTENG", lat: -2.2000, lng: 113.9000, type: "RURAL" },
+  { name: "HUTAN_KALIMANTAN, KALTIM", lat: 0.5000, lng: 117.0000, type: "RURAL" },
+  { name: "HUTAN_SUMATERA, JAMBI", lat: -1.5000, lng: 102.5000, type: "RURAL" },
+  { name: "TAMAN_NASIONAL_LEUSER, ACEH", lat: 3.5000, lng: 97.5000, type: "RURAL" },
+  { name: "TAMAN_NASIONAL_KOMODO, NTT", lat: -8.5500, lng: 119.4833, type: "RURAL" },
+  { name: "TAMAN_NASIONAL_TANJUNG_PUTING, KALTENG", lat: -2.6500, lng: 111.8000, type: "RURAL" },
+  { name: "TAMAN_NASIONAL_BUKIT_BARISAN, LAMPUNG", lat: -5.1000, lng: 104.3000, type: "RURAL" },
+  { name: "TAMAN_NASIONAL_BALURAN, JATIM", lat: -7.9167, lng: 114.3833, type: "RURAL" },
+  { name: "TAMAN_NASIONAL_WAY_KAMBAS, LAMPUNG", lat: -4.9167, lng: 105.7500, type: "RURAL" }
+];
 
-function initMap(){
-  map = L.map('map').setView([-2.5,118],5);
+let map, marker;
+
+function detectProvider(phone) {
+  let clean = phone.replace(/\D/g, '');
+  if (clean.startsWith('62')) clean = '0' + clean.slice(2);
+  if (!clean.startsWith('0')) clean = '0' + clean;
+  const prefix4 = clean.substring(0, 4);
+  for (const p of providers) if (p.prefixes.includes(prefix4)) return p.name;
+  return "UNKNOWN";
+}
+
+function pickLocation(phone) {
+  let clean = phone.replace(/\D/g, '');
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) % 1000000;
+  return locations[(hash + Math.floor(Math.random() * locations.length)) % locations.length];
+}
+
+function randomBetween(min, max) { return Math.random() * (max - min) + min; }
+
+function getTimestamp() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+}
+
+function initMap(lat, lng, areaType, accuracy) {
+  if (map) map.remove();
+  let zoom;
+  switch (areaType) {
+    case "METRO": zoom = 15; break;
+    case "KOTA": zoom = 14; break;
+    case "KABUPATEN": case "KECAMATAN": case "DESA": zoom = 13; break;
+    case "RURAL": case "COASTAL": case "MOUNTAIN": zoom = 12; break;
+    case "REMOTE": zoom = 10; break;
+    default: zoom = 13;
+  }
+  map = L.map('map').setView([lat, lng], zoom);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
+    attribution: '© OpenStreetMap'
   }).addTo(map);
+  const icon = L.divIcon({
+    className: 'custom-marker',
+    html: '<div style="background:#00ff41;width:22px;height:22px;border-radius:50%;border:3px solid #000;box-shadow:0 0 15px #00ff41,0 0 30px #00ff41;"></div>',
+    iconSize: [22, 22], iconAnchor: [11, 11]
+  });
+  marker = L.marker([lat, lng], { icon }).addTo(map);
+  marker.bindPopup(`<b style="color:#00ff41">[ TARGET LOCKED ]</b><br>Area: ${areaType}<br>Accuracy: ±${accuracy}m`).openPopup();
+  L.circle([lat, lng], { color: '#00ff41', fillColor: '#00ff41', fillOpacity: 0.1, radius: accuracy }).addTo(map);
 }
 
-function acakLokasi(){
-  let nomor = document.getElementById("nomor").value;
-  if(nomor === "") return alert("Masukkan nomor dulu");
-
-  let randomKota = kotaIndonesia[Math.floor(Math.random()*kotaIndonesia.length)];
-
-  if(!map) initMap();
-  if(marker) map.removeLayer(marker);
-
-  marker = L.marker([randomKota.lat, randomKota.long]).addTo(map)
-    .bindPopup("Lokasi: "+randomKota.nama+", Indonesia")
-    .openPopup();
-
-  map.setView([randomKota.lat, randomKota.long],12);
-
-  document.getElementById("hasil").innerHTML =
-    "Nomor: "+nomor+"<br>" +
-    "Status: TERDETEKSI<br>" +
-    "Lokasi: "+randomKota.nama+", Indonesia<br>" +
-    "Koordinat: "+randomKota.lat+", "+randomKota.long;
+const termLog = document.getElementById('termLog');
+function clearLog() { termLog.innerHTML = ''; termLog.classList.add('active'); }
+function addLog(msg, type = 'info') {
+  const line = document.createElement('div');
+  line.className = 'log-line-2';
+  const cls = { 'ok': 'log-ok', 'warn': 'log-warn', 'err': 'log-err', 'info': 'log-info' }[type] || 'log-info';
+  const tag = { 'ok': '[OK]', 'warn': '[WARN]', 'err': '[ERR]', 'info': '[INFO]' }[type] || '[INFO]';
+  line.innerHTML = `<span class="log-time">[${getTimestamp()}]</span> <span class="${cls}">${tag}</span> ${msg}`;
+  termLog.appendChild(line);
+  termLog.scrollTop = termLog.scrollHeight;
 }
+
+const progressContainer = document.getElementById('progressContainer');
+const progressFill = document.getElementById('progressFill');
+const progressStage = document.getElementById('progressStage');
+const progressPercent = document.getElementById('progressPercent');
+function setProgress(percent, stage) {
+  progressContainer.classList.add('active');
+  progressFill.style.width = percent + '%';
+  progressPercent.textContent = percent + '%';
+  if (stage) progressStage.textContent = stage;
+}
+
+async function startTracking() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!phone || phone.replace(/\D/g, '').length < 10) {
+    clearLog();
+    addLog('Invalid phone number format! Minimum 10 digits required.', 'err');
+    return;
+  }
+  const btn = document.getElementById('trackBtn');
+  btn.disabled = true;
+  document.getElementById('result').classList.remove('active');
+  clearLog();
+
+  const steps = [
+    { p: 10, stage: "CONNECTING...", log: `Initializing connection to target: ${phone}`, type: 'info', delay: 600 },
+    { p: 20, stage: "HANDSHAKE", log: "Secure handshake established [AES-256-GCM]", type: 'ok', delay: 700 },
+    { p: 32, stage: "PINGING...", log: `Sending ping packet to ${phone}...`, type: 'info', delay: 800 },
+    { p: 45, stage: "SCANNING", log: "Scanning GSM towers... [24 towers found]", type: 'info', delay: 900 },
+    { p: 58, stage: "TRIANGULATING", log: "Performing triangulation algorithm...", type: 'info', delay: 900 },
+    { p: 72, stage: "IDENTIFYING", log: `Provider identified: ${detectProvider(phone)}`, type: 'ok', delay: 800 },
+    { p: 85, stage: "LOCKING...", log: "Locking GPS coordinates...", type: 'warn', delay: 900 },
+    { p: 95, stage: "DECRYPTING", log: "Decrypting location data...", type: 'info', delay: 700 },
+    { p: 100, stage: "COMPLETE", log: "TARGET LOCATION ACQUIRED ✓", type: 'ok', delay: 500 }
+  ];
+
+  for (const step of steps) {
+    setProgress(step.p, step.stage);
+    addLog(step.log, step.type);
+    await new Promise(r => setTimeout(r, step.delay));
+  }
+  showResult(phone);
+  btn.disabled = false;
+}
+
+function showResult(phone) {
+  const loc = pickLocation(phone);
+  let variance;
+  switch (loc.type) {
+    case "METRO": variance = 0.005; break;
+    case "KOTA": variance = 0.01; break;
+    case "KABUPATEN": variance = 0.02; break;
+    case "KECAMATAN": variance = 0.03; break;
+    case "DESA": variance = 0.04; break;
+    case "RURAL": variance = 0.05; break;
+    case "COASTAL": variance = 0.03; break;
+    case "MOUNTAIN": variance = 0.04; break;
+    case "REMOTE": variance = 0.08; break;
+    default: variance = 0.02;
+  }
+  const lat = loc.lat + randomBetween(-variance, variance);
+  const lng = loc.lng + randomBetween(-variance, variance);
+  const provider = detectProvider(phone);
+
+  let accuracyRange;
+  switch (loc.type) {
+    case "METRO": accuracyRange = [20, 100]; break;
+    case "KOTA": accuracyRange = [50, 200]; break;
+    case "KABUPATEN": accuracyRange = [100, 400]; break;
+    case "KECAMATAN": accuracyRange = [150, 600]; break;
+    case "DESA": accuracyRange = [200, 800]; break;
+    case "RURAL": accuracyRange = [300, 1200]; break;
+    case "COASTAL": accuracyRange = [200, 900]; break;
+    case "MOUNTAIN": accuracyRange = [300, 1000]; break;
+    case "REMOTE": accuracyRange = [800, 3000]; break;
+    default: accuracyRange = [100, 500];
+  }
+  const accuracy = Math.floor(randomBetween(accuracyRange[0], accuracyRange[1]));
+
+  let clean = phone.replace(/\D/g, '');
+  if (clean.startsWith('62')) clean = '0' + clean.slice(2);
+  if (!clean.startsWith('0')) clean = '0' + clean;
+
+  document.getElementById('resPhone').textContent = clean;
+  document.getElementById('resProvider').textContent = provider;
+  document.getElementById('resCoords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  document.getElementById('resAddress').textContent = loc.name;
+  document.getElementById('resAreaType').textContent = loc.type;
+  document.getElementById('resTime').textContent = new Date().toLocaleString('id-ID');
+  document.getElementById('resAccuracy').textContent = `± ${accuracy}m`;
+
+  document.getElementById('result').classList.add('active');
+  setTimeout(() => {
+    initMap(lat, lng, loc.type, accuracy);
+    map.invalidateSize();
+    addLog(`Area type detected: ${loc.type}`, 'ok');
+    addLog('Rendering map visualization...', 'ok');
+  }, 100);
+  setTimeout(() => {
+    progressContainer.classList.remove('active');
+    progressFill.style.width = '0%';
+  }, 3000);
+}
+
+document.getElementById('phoneInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') startTracking();
+});
+
+let uptime = 0;
+setInterval(() => {
+  uptime++;
+  const h = String(Math.floor(uptime / 3600)).padStart(2,'0');
+  const m = String(Math.floor((uptime % 3600) / 60)).padStart(2,'0');
+  const s = String(uptime % 60).padStart(2,'0');
+  const el = document.querySelector('.ascii-footer');
+  if (el) el.textContent = `[ SESSION ENCRYPTED ] · [ NODE: JKT-07 ] · [ PROXY: ACTIVE ] · [ UPTIME: ${h}:${m}:${s} ]`;
+}, 1000);
 </script>
 
 </body>
